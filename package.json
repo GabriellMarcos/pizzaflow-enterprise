@@ -1,0 +1,30 @@
+﻿{
+  "name": "pizzaflow-enterprise",
+  "version": "1.0.0",
+  "description": "Sistema completo de gerenciamento de pizzaria com CI/CD e AWS",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd src/backend && npm run dev",
+    "dev:frontend": "cd src/frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd src/backend && npm run build",
+    "build:frontend": "cd src/frontend && npm run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd src/backend && npm test",
+    "test:frontend": "cd src/frontend && npm test",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  },
+  "workspaces": [
+    "src/backend",
+    "src/frontend"
+  ],
+  "keywords": ["pizzaria", "aws", "react", "nodejs", "ci-cd", "docker"],
+  "author": "Gabriel Marcos",
+  "license": "MIT"
+}
