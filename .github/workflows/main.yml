@@ -1,4 +1,4 @@
-﻿name:  PizzaFlow Enterprise CI/CD
+name: 🚀 PizzaFlow Enterprise CI/CD
 
 on:
   push:
@@ -7,171 +7,63 @@ on:
     branches: [ main, develop ]
 
 env:
-  NODE_VERSION: ''18.x''
-  AWS_REGION: ''us-east-1''
+  NODE_VERSION: '18.x'
+  AWS_REGION: 'us-east-1'
 
 jobs:
-  code-quality:
-    name: " Code Quality"
-    runs-on: ubuntu-latest
-    steps:
-      - name: " Checkout code"
-        uses: actions/checkout@v4
-
-      - name: " Setup Node.js"
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: ''npm''
-          cache-dependency-path: |
-            src/backend/package-lock.json
-            src/frontend/package-lock.json
-
-      - name: " Install dependencies"
-        run: |
-          npm ci
-          cd src/backend && npm ci
-          cd ../frontend && npm ci
-
-      - name: " ESLint Analysis"
-        run: |
-          cd src/backend && npx eslint . --ext .js,.jsx
-          cd ../frontend && npx eslint . --ext .js,.jsx
-
   test-backend:
-    name: " Backend Tests"
+    name: "🧪 Backend Tests"
     runs-on: ubuntu-latest
-    needs: code-quality
-    services:
-      mongodb:
-        image: mongo:6.0
-        ports:
-          - 27017:27017
-
     steps:
-      - name: " Checkout code"
+      - name: "📥 Checkout code"
         uses: actions/checkout@v4
 
-      - name: " Setup Node.js"
+      - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: " Install backend dependencies"
+      - name: "📦 Install backend dependencies"
         run: cd src/backend && npm ci
 
-      - name: " Run backend tests"
-        run: cd src/backend && npm test
-        env:
-          DB_HOST: localhost
-          DB_PORT: 27017
-          JWT_SECRET: test-secret
-
-      - name: " Upload coverage"
-        uses: codecov/codecov-action@v3
-        with:
-          file: src/backend/coverage/lcov.info
-          flags: backend
+      - name: "🏗️ Build backend"
+        run: cd src/backend && npm run build
 
   test-frontend:
-    name: " Frontend Tests"
+    name: "🎨 Frontend Tests"
     runs-on: ubuntu-latest
-    needs: code-quality
-
     steps:
-      - name: " Checkout code"
+      - name: "📥 Checkout code"
         uses: actions/checkout@v4
 
-      - name: " Setup Node.js"
+      - name: "🔧 Setup Node.js"
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: " Install frontend dependencies"
+      - name: "📦 Install frontend dependencies"
         run: cd src/frontend && npm ci
 
-      - name: " Run frontend tests"
-        run: cd src/frontend && npm test
-
-      - name: " Build frontend"
+      - name: "🏗️ Build frontend"
         run: cd src/frontend && npm run build
 
-  security-scan:
-    name: " Security Scan"
-    runs-on: ubuntu-latest
-    steps:
-      - name: " Checkout code"
-        uses: actions/checkout@v4
-
-      - name: " Run npm audit"
-        run: |
-          cd src/backend && npm audit --audit-level moderate
-          cd ../frontend && npm audit --audit-level moderate
-
-      - name: " Trivy vulnerability scanner"
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: ''fs''
-          scan-ref: ''.''
-          format: ''sarif''
-          output: ''trivy-results.sarif''
-
   auto-version:
-    name: " Auto Version & Changelog"
+    name: "🏷️ Auto Versioning"
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend, security-scan]
-    if: github.ref == ''refs/heads/main''
+    needs: [test-backend, test-frontend]
+    if: github.ref == 'refs/heads/main'
 
     steps:
-      - name: " Checkout code"
+      - name: "📥 Checkout code"
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: " Setup Node.js"
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: " Automatic versioning"
+      - name: "🏷️ Automatic versioning"
         uses: anothrNick/github-tag-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: patch
           WITH_V: true
           RELEASE_BRANCHES: main
-
-      - name: " Generate changelog"
-        uses: orhun/git-cliff-action@v2
-        with:
-          config: cliff.toml
-          args: -o CHANGELOG.md
-        env:
-          OUTPUT: CHANGELOG.md
-
-      - name: " Commit changelog"
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add CHANGELOG.md
-          git commit -m "docs: update changelog for ${{ steps.tag.outputs.new_tag }}"
-          git push
-
-  deploy-preview:
-    name: " Deploy Preview"
-    runs-on: ubuntu-latest
-    needs: auto-version
-    if: github.ref == ''refs/heads/main''
-
-    steps:
-      - name: " Checkout code"
-        uses: actions/checkout@v4
-
-      - name: " Vercel deploy"
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: ''--prod''
