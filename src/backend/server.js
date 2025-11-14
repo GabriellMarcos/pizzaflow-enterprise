@@ -1,34 +1,49 @@
-﻿import express from "express";
-import cors from "cors";
-import helmet from "helmet";
+﻿const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const { logger, errorHandler } = require('./middleware/logger');
+const pizzaRoutes = require('./routes/pizzaRoutes');
+const config = require('./config/database');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = config.port;
 
-// Middlewares
+// Middleware
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(logger);
 
-// Health check route
-app.get("/health", (req, res) => {
-  res.json({ 
-    status: "OK", 
+// Routes
+app.use('/api/pizzas', pizzaRoutes);
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
-    service: "PizzaFlow Backend"
+    service: 'PizzaFlow Backend API',
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
   });
 });
 
-// Pizza menu route
-app.get("/api/pizzas", (req, res) => {
-  const pizzas = [
-    { id: 1, name: "Margherita", price: 25.90 },
-    { id: 2, name: "Pepperoni", price: 29.90 },
-    { id: 3, name: "Quatro Queijos", price: 32.90 }
-  ];
-  res.json(pizzas);
+// Error handling
+app.use(errorHandler);
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Endpoint não encontrado'
+  });
 });
 
 app.listen(PORT, () => {
-  console.log(` PizzaFlow Server running on port ${PORT}`);
+  console.log(`🍕 PizzaFlow API running on port ${PORT}`);
+  console.log(`🏠 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📊 Health: http://localhost:${PORT}/health`);
+  console.log(`🛒 Pizzas: http://localhost:${PORT}/api/pizzas`);
 });
+
+module.exports = app;

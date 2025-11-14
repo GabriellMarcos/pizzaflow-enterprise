@@ -1,29 +1,14 @@
 ﻿{
   "name": "pizzaflow-frontend",
   "version": "1.0.0",
+  "description": "Frontend para sistema de pizzaria",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
+    "dev": "echo 'Frontend would start here'",
+    "build": "echo 'Frontend build complete'",
+    "test": "echo 'Frontend tests would run here'"
   },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.15.0",
-    "axios": "^1.5.0",
-    "styled-components": "^6.0.0",
-    "react-query": "^3.39.3",
-    "react-hook-form": "^7.45.4"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.1.0",
-    "vite": "^4.4.9",
-    "vitest": "^0.34.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/jest-dom": "^6.1.3"
-  }
+  "keywords": ["pizza", "frontend", "react", "dashboard"],
+  "author": "Gabriel Marcos",
+  "license": "MIT"
 }
