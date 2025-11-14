@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PizzaFlow - Sistema de Pizzaria</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .pizza-list {
+            list-style: none;
+        }
+        
+        .pizza-item {
+            background: #f8f9fa;
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .pizza-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        .pizza-price {
+            color: #28a745;
+            font-weight: bold;
+            float: right;
+        }
+        
+        .pizza-ingredients {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .order-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .form-group input, .form-group select {
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 20px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .api-status {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍕 PizzaFlow</h1>
+            <p>Sistema de Gerenciamento de Pizzaria</p>
+            <div class="api-status" id="apiStatus">
+                Verificando status da API...
+            </div>
+        </div>
+        
+        <div class="dashboard">
+            <div class="card">
+                <h2>Cardápio de Pizzas</h2>
+                <ul class="pizza-list" id="pizzaList">
+                    <li class="pizza-item">
+                        <div class="pizza-name">Carregando...</div>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="card">
+                <h2>Fazer Pedido</h2>
+                <form class="order-form" id="orderForm">
+                    <div class="form-group">
+                        <label for="customerName">Seu Nome:</label>
+                        <input type="text" id="customerName" required placeholder="Digite seu nome">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pizzaSelect">Escolha a Pizza:</label>
+                        <select id="pizzaSelect" required>
+                            <option value="">Carregando pizzas...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="quantity">Quantidade:</label>
+                        <input type="number" id="quantity" value="1" min="1" required>
+                    </div>
+                    
+                    <button type="submit" class="btn">Fazer Pedido 🍕</button>
+                </form>
+                
+                <div id="orderStatus"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Pedidos Recentes</h2>
+            <div id="ordersList">Carregando pedidos...</div>
+        </div>
+    </div>
+
+    <script>
+        // API Base URL
+        const API_BASE = 'http://localhost:3001/api';
+        
+        // Check API health
+        async function checkAPIHealth() {
+            try {
+                const response = await fetch('http://localhost:3001/health');
+                const data = await response.json();
+                document.getElementById('apiStatus').textContent = `✅ API Online - ${data.service}`;
+                document.getElementById('apiStatus').style.background = '#28a745';
+            } catch (error) {
+                document.getElementById('apiStatus').textContent = '❌ API Offline';
+                document.getElementById('apiStatus').style.background = '#dc3545';
+            }
+        }
+        
+        // Load pizzas
+        async function loadPizzas() {
+            try {
+                const response = await fetch(`${API_BASE}/pizzas`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const pizzaList = document.getElementById('pizzaList');
+                    const pizzaSelect = document.getElementById('pizzaSelect');
+                    
+                    // Clear loading
+                    pizzaList.innerHTML = '';
+                    pizzaSelect.innerHTML = '<option value="">Selecione uma pizza</option>';
+                    
+                    // Populate lists
+                    data.data.forEach(pizza => {
+                        // Add to pizza list
+                        const pizzaItem = document.createElement('li');
+                        pizzaItem.className = 'pizza-item';
+                        pizzaItem.innerHTML = `
+                            <div class="pizza-name">${pizza.name} <span class="pizza-price">R$ ${pizza.price}</span></div>
+                            <div class="pizza-ingredients">${pizza.ingredients.join(', ')}</div>
+                        `;
+                        pizzaList.appendChild(pizzaItem);
+                        
+                        // Add to select
+                        const option = document.createElement('option');
+                        option.value = pizza.id;
+                        option.textContent = `${pizza.name} - R$ ${pizza.price}`;
+                        pizzaSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao carregar pizzas:', error);
+            }
+        }
+        
+        // Load orders
+        async function loadOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/orders`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const ordersList = document.getElementById('ordersList');
+                    
+                    if (data.data.length === 0) {
+                        ordersList.innerHTML = '<p>Nenhum pedido realizado ainda.</p>';
+                        return;
+                    }
+                    
+                    ordersList.innerHTML = data.data.map(order => `
+                        <div class="pizza-item">
+                            <div class="pizza-name">
+                                Pedido #${order.id} - ${order.customerName}
+                                <span class="pizza-price">R$ ${order.total}</span>
+                            </div>
+                            <div class="pizza-ingredients">
+                                Status: ${order.status} | 
+                                Itens: ${order.items} | 
+                                Data: ${new Date(order.createdAt).toLocaleString()}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar pedidos:', error);
+                document.getElementById('ordersList').innerHTML = '<p>Erro ao carregar pedidos.</p>';
+            }
+        }
+        
+        // Handle order form
+        document.getElementById('orderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const customerName = document.getElementById('customerName').value;
+            const pizzaId = document.getElementById('pizzaSelect').value;
+            const quantity = document.getElementById('quantity').value;
+            
+            if (!customerName || !pizzaId) {
+                alert('Por favor, preencha todos os campos!');
+                return;
+            }
+            
+            try {
+                // In a real app, you'd calculate the total based on pizza price
+                const total = quantity * 25.90; // Simplified
+                
+                const response = await fetch(`${API_BASE}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        customerName,
+                        items: `${quantity}x Pizza ID ${pizzaId}`,
+                        total: total.toFixed(2)
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('orderStatus').innerHTML = `
+                        <div class="status">
+                            ✅ Pedido realizado com sucesso! Número: #${data.data.id}
+                        </div>
+                    `;
+                    
+                    // Clear form
+                    document.getElementById('orderForm').reset();
+                    document.getElementById('quantity').value = 1;
+                    
+                    // Reload orders
+                    loadOrders();
+                } else {
+                    alert('Erro ao fazer pedido: ' + data.message);
+                }
+            } catch (error) {
+                console.error('Erro ao fazer pedido:', error);
+                alert('Erro ao conectar com o servidor.');
+            }
+        });
+        
+        // Initialize app
+        checkAPIHealth();
+        loadPizzas();
+        loadOrders();
+        
+        // Refresh every 30 seconds
+        setInterval(() => {
+            loadOrders();
+        }, 30000);
+    </script>
+</body>
+</html>
