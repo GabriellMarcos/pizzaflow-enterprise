@@ -1,43 +1,55 @@
-﻿version: ''3.8''
+﻿version: '3.8'
 
 services:
   backend:
     build:
       context: ./src/backend
       dockerfile: Dockerfile
+    container_name: pizzaflow-backend-gabrielm
     ports:
       - "3001:3001"
     environment:
       - NODE_ENV=development
       - DB_HOST=mongodb
-      - AWS_REGION=us-east-1
+      - DB_NAME=pizzaflow_gabrielm
     depends_on:
       - mongodb
     volumes:
       - ./src/backend:/app
-      - /app/node_modules
+    networks:
+      - pizzaflow-network-gabrielm
 
   frontend:
     build:
       context: ./src/frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile  
+    container_name: pizzaflow-frontend-gabrielm
     ports:
       - "3000:3000"
     environment:
       - VITE_API_URL=http://localhost:3001
     volumes:
       - ./src/frontend:/app
-      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - pizzaflow-network-gabrielm
 
   mongodb:
     image: mongo:6.0
+    container_name: mongodb-gabrielm
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_DATABASE=pizzaflow_gabrielm
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_data_gabrielm:/data/db
+    networks:
+      - pizzaflow-network-gabrielm
 
 volumes:
-  mongodb_data:
+  mongodb_data_gabrielm:
+
+networks:
+  pizzaflow-network-gabrielm:
+    driver: bridge
